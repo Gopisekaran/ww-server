@@ -75,6 +75,9 @@ export class BikerProfile {
   @Column({ type: 'date' })
   dob: Date;
 
+  @Column({ type: 'date', nullable: true })
+  joiningDate: Date;
+
   /**
    * Blood group (e.g., O+, AB-)
    */

@@ -1,37 +1,22 @@
 import { Expose, Transform, Type } from 'class-transformer';
+import { IsDateString, IsOptional } from 'class-validator';
+import {
+  BadgeLiteDto,
+  BikerProfileDto,
+  EventTypeLiteDto,
+} from './event-list-response.dto';
 
-export class BikerProfileDto {
-  @Expose()
-  id!: string;
+export class PublicRideFilterDto {
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
 
-  @Expose()
-  name!: string;
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
 
-export class BadgeLiteDto {
-  @Expose()
-  id!: string;
-
-  @Expose()
-  title!: string;
-
-  @Expose()
-  iconUrl!: string;
-}
-
-export class EventTypeLiteDto {
-  @Expose()
-  id!: string;
-
-  @Expose()
-  name!: string;
-
-  @Expose()
-  @Type(() => BadgeLiteDto)
-  badge?: BadgeLiteDto;
-}
-
-export class EventListResponseDto {
+export class PublicRideListResponseDto {
   @Expose()
   id!: string;
 
@@ -52,15 +37,6 @@ export class EventListResponseDto {
   time!: string;
 
   @Expose()
-  price!: number;
-
-  @Expose()
-  isCancelled!: boolean;
-
-  @Expose()
-  isAborted!: boolean;
-
-  @Expose()
   isCompleted!: boolean;
 
   @Expose()
@@ -71,7 +47,6 @@ export class EventListResponseDto {
   @Transform(({ obj }) => obj.participants?.length ?? 0)
   participantsCount!: number;
 
-  // Badges (event-level badge and type-level badge)
   @Expose()
   @Type(() => BadgeLiteDto)
   badge?: BadgeLiteDto;

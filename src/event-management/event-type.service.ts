@@ -77,8 +77,6 @@ export class EventTypeService {
       .orderBy('eventType.name', 'ASC')
       .getMany();
 
-    console.log(eventTypes);
-
     return plainToInstance(EventTypeAndEventsDto, eventTypes, {
       excludeExtraneousValues: true, // removes all non-@Expose fields
     });

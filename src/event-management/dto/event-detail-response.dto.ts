@@ -111,6 +111,15 @@ export class EventDetailsDTO {
   time!: string;
 
   @Expose()
+  isCancelled!: boolean;
+
+  @Expose()
+  isAborted!: boolean;
+
+  @Expose()
+  isCompleted!: boolean;
+
+  @Expose()
   price!: number;
 
   @Expose()

@@ -1,7 +1,7 @@
 import {
   IsArray,
   IsBoolean,
-  IsDate,
+  IsDateString,
   IsEmail,
   IsString,
   IsUUID,
@@ -35,8 +35,11 @@ export class CreateBikerProfileDto {
   @IsString()
   residing: string;
 
-  @IsDate()
+  @IsDateString()
   dob: Date;
+
+  @IsDateString()
+  joiningDate: Date;
 
   @IsString()
   bloodGroup: string;

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RideEvent } from './entities/event.entity';
 import { RideEventItinerary } from './entities/event-itenery.entity';
@@ -18,6 +18,10 @@ import { BikerProfile } from '../biker-profile/entities/biker-profile.entity';
 import { UserRole } from '../role-management/entities/role-management.entity';
 import { UpdateParticipantsStatusDto } from './dto/update-participants-status.dto';
 import { UserBadge } from '../badge/entities/user-badges.entity';
+import {
+  PublicRideFilterDto,
+  PublicRideListResponseDto,
+} from './dto/public-ride-response.dto';
 
 @Injectable()
 export class EventManagementService {
@@ -69,6 +73,43 @@ export class EventManagementService {
     });
   }
 
+  async findPublicRides(filter: PublicRideFilterDto) {
+    const { startDate, endDate } = filter;
+    const where: any = {
+      isCancelled: false,
+      isAborted: false,
+    };
+
+    if (startDate && endDate) {
+      where.startDate = Between(new Date(startDate), new Date(endDate));
+    } else if (startDate) {
+      where.startDate = MoreThanOrEqual(new Date(startDate));
+    } else if (endDate) {
+      where.startDate = LessThanOrEqual(new Date(endDate));
+    }
+
+    const events = await this.eventRepository.find({
+      where,
+      relations: [
+        'participants',
+        'participants.biker',
+        'badge',
+        'eventType',
+        'eventType.badge',
+        'createdUser',
+      ],
+      order: { startDate: 'ASC', time: 'ASC' },
+    });
+
+    const filtered = events.filter(
+      (event) => !event.isCancelled && !event.isAborted,
+    );
+
+    return plainToInstance(PublicRideListResponseDto, filtered, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async joinEvent(supabaseUid: string, eventId: string) {
     const event = await this.eventRepository.findOne({
       where: { id: eventId },
@@ -93,6 +134,31 @@ export class EventManagementService {
 
     const data = this.eventParticipant.save(eventParticipated);
     return data;
+  }
+
+  async leaveEvent(supabaseUid: string, eventId: string) {
+    const event = await this.eventRepository.findOne({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    if (event.isCompleted) {
+      throw new ConflictException('Cannot leave a completed event');
+    }
+
+    const participation = await this.eventParticipant.findOne({
+      where: { eventId, bikerId: supabaseUid },
+    });
+
+    if (!participation) {
+      throw new NotFoundException('You have not joined this event');
+    }
+
+    await this.eventParticipant.delete({ id: participation.id });
+    return { left: true };
   }
 
   async findOne(id: string, requesterId?: string) {
@@ -252,14 +318,14 @@ export class EventManagementService {
         const bikerId = participant.bikerId;
         for (const badgeId of toAwardBadgeIds) {
           const existing = await this.userBadgeRepo.findOne({
-            where: { userId: bikerId, badgeId },
+            where: { bikerId, badgeId },
           });
           if (existing) {
             existing.count = (existing.count ?? 1) + 1;
             await this.userBadgeRepo.save(existing);
           } else {
             const ub = this.userBadgeRepo.create({
-              userId: bikerId,
+              bikerId,
               badgeId,
               count: 1,
             });
@@ -296,7 +362,7 @@ export class EventManagementService {
     // Remove event badge association (if exists)
     if (event.badge?.id) {
       const existingEventBadge = await this.userBadgeRepo.findOne({
-        where: { userId: bikerId, badgeId: event.badge.id },
+        where: { bikerId, badgeId: event.badge.id },
       });
       if (existingEventBadge) {
         await this.userBadgeRepo.remove(existingEventBadge);
@@ -306,7 +372,7 @@ export class EventManagementService {
     // Decrement event type badge count or remove if reaches 0
     if (event.eventType?.badge?.id) {
       const typeBadge = await this.userBadgeRepo.findOne({
-        where: { userId: bikerId, badgeId: event.eventType.badge.id },
+        where: { bikerId, badgeId: event.eventType.badge.id },
       });
       if (typeBadge) {
         const newCount = (typeBadge.count ?? 1) - 1;

@@ -130,6 +130,9 @@ export class BikerResponseDTO {
   roleId: string;
 
   @Expose()
+  joiningDate: Date;
+
+  @Expose()
   createdAt: Date;
 
   @Expose()

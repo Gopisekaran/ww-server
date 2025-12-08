@@ -7,8 +7,9 @@ import {
   Param,
   Delete,
   UseGuards,
-  Query,
   ParseUUIDPipe,
+  Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { EventManagementService } from './event-management.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -23,8 +24,13 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  PublicRideFilterDto,
+  PublicRideListResponseDto,
+} from './dto/public-ride-response.dto';
 
 @ApiTags('Events')
 @Controller('event-management')
@@ -61,22 +67,34 @@ export class EventManagementController {
     return this.eventManagementService.findAll();
   }
 
-  @UseGuards(SupabaseAuthGuard)
-  @ApiBearerAuth()
+  @Get('public-rides')
   @ApiOperation({
-    summary: 'Join an event (legacy GET). Prefer POST /:id/join.',
+    summary: 'List public rides (no auth)',
+    description:
+      'Returns upcoming rides filtered by optional start/end date excluding cancelled or aborted events.',
   })
-  @ApiParam({
-    name: 'event-id',
-    required: true,
-    example: 'b4a2c9f5-2e31-4c71-9f2b-3a6b8b1d2e45',
+  @ApiOkResponse({
+    type: PublicRideListResponseDto,
+    isArray: true,
+    description: 'Filtered public rides without price info',
   })
-  @Get('join')
-  joinEvent(
-    @Query('event-id', new ParseUUIDPipe()) eventId: string,
-    @SupabaseUid() supabaseUid: string,
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'ISO start date (inclusive) to filter rides',
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'ISO end date (inclusive) to filter rides',
+    example: '2025-01-31',
+  })
+  findPublicRides(
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    filter: PublicRideFilterDto,
   ) {
-    return this.eventManagementService.joinEvent(supabaseUid, eventId);
+    return this.eventManagementService.findPublicRides(filter);
   }
 
   // New: Rider joins event via POST
@@ -94,6 +112,22 @@ export class EventManagementController {
     @SupabaseUid() supabaseUid: string,
   ) {
     return this.eventManagementService.joinEvent(supabaseUid, eventId);
+  }
+
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Leave an event (only if not completed)' })
+  @ApiParam({
+    name: 'id',
+    description: 'Event ID',
+    example: 'b4a2c9f5-2e31-4c71-9f2b-3a6b8b1d2e45',
+  })
+  @Post(':id/leave')
+  leaveEventPost(
+    @Param('id', new ParseUUIDPipe()) eventId: string,
+    @SupabaseUid() supabaseUid: string,
+  ) {
+    return this.eventManagementService.leaveEvent(supabaseUid, eventId);
   }
 
   @UseGuards(SupabaseAuthGuard)

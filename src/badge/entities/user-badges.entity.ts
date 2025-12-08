@@ -15,10 +15,10 @@ export class UserBadge {
   id: string;
 
   @Column('uuid')
-  userId: string;
+  badgeId: string;
 
   @Column('uuid')
-  badgeId: string;
+  bikerId: string;
 
   @ManyToOne(() => Badge, (badge) => badge.userBadges, {
     onDelete: 'CASCADE',
