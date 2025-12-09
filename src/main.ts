@@ -9,9 +9,12 @@ import { ResponseInterceptor } from './shared/response.interceptor';
 import { AllExceptionsFilter } from './shared/all-exception.filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   // CORS: allow localhost and any origin (for now). If you need credentials, keep dynamic origin.
   app.enableCors({
