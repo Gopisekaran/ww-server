@@ -87,7 +87,7 @@ export class BikerProfile {
   /**
    * Driving license number
    */
-  @Column({ length: 20, nullable: true })
+  @Column({ length: 30, nullable: true })
   drivingLicenseNumber: string;
 
   /**

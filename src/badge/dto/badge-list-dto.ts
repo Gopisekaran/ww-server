@@ -56,8 +56,29 @@ export class BadgeListDto {
   rideEvent?: RideEventMinimalDto | null;
 
   @Expose()
+  @Type(() => BadgeLevelDto)
+  levels: BadgeLevelDto[];
+
+  @Expose()
   createdAt: string;
 
   @Expose()
   updatedAt: string;
+}
+
+export class BadgeLevelDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  description: string;
+
+  @Expose()
+  count: number;
+
+  @Expose()
+  imageUrl: string;
 }
