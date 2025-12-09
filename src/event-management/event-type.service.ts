@@ -73,6 +73,8 @@ export class EventTypeService {
       )
       .leftJoinAndSelect('eventType.badge', 'badge')
       .leftJoinAndSelect('event.badge', 'badgeEvent')
+      .leftJoinAndSelect('event.participants', 'participants')
+      .leftJoinAndSelect('event.createdUser', 'createdUser')
       .where('event.id IS NOT NULL') // ensure at least one active event
       .orderBy('eventType.name', 'ASC')
       .getMany();
