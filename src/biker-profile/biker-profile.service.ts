@@ -97,6 +97,7 @@ export class BikerProfileService {
         'participations.event.eventType',
         'userBadges',
         'userBadges.badge',
+        'region',
       ],
     });
     if (!biker) {

@@ -177,8 +177,13 @@ export class BikerProfile {
 
   // biker-profile.entity.ts
   @ManyToOne(() => Region, (region) => region.profiles, {
+    eager: true,
     onDelete: 'SET NULL',
     nullable: true,
   })
+  @JoinColumn({ name: 'regionId' })
   region: Region;
+
+  @Column({ type: 'uuid', nullable: true, unique: false })
+  regionId?: string;
 }

@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
@@ -52,6 +53,10 @@ export class CreateBikerProfileDto {
 
   @IsArray()
   gears: string[];
+
+  @IsOptional()
+  @IsUUID()
+  regionId?: string;
 }
 
 export class CreateBikeProfileSupabase extends CreateBikerProfileDto {

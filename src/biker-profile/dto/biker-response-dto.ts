@@ -1,6 +1,14 @@
 import { Expose, Type } from 'class-transformer';
 import { RoleResponseDto } from '../../role-management/dto/role-response.dto';
 
+export class RegionDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
+}
+
 export class BadgeDto {
   @Expose()
   id: string;
@@ -141,6 +149,13 @@ export class BikerResponseDTO {
   @Expose()
   @Type(() => RoleResponseDto)
   role: RoleResponseDto;
+
+  @Expose()
+  regionId: string;
+
+  @Expose()
+  @Type(() => RegionDto)
+  region: RegionDto;
 
   @Expose()
   @Type(() => ParticipationDto)
