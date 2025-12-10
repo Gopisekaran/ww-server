@@ -67,11 +67,12 @@ export class BadgeService {
       const badge = this.badgeRepository.create({
         ...createBadgeDto,
         isRepeatable: isRepeatable ?? false,
-        levels: levels?.map((level) => ({
-          name: level.name,
-          description: level.description,
-          count: level.count,
-          imageUrl: level.imageUrl,
+        levels: levels?.map((lvl) => ({
+          level: lvl.level,
+          name: lvl.name,
+          description: lvl.description,
+          count: lvl.count,
+          imageUrl: lvl.imageUrl,
         })),
       });
 
@@ -100,6 +101,18 @@ export class BadgeService {
         relations: ['rideType', 'rideEvent', 'levels'],
       });
 
+      // Sort levels by level column (nulls last)
+      badges.forEach((badge) => {
+        if (badge.levels) {
+          badge.levels.sort((a, b) => {
+            if (a.level == null && b.level == null) return 0;
+            if (a.level == null) return 1;
+            if (b.level == null) return -1;
+            return a.level - b.level;
+          });
+        }
+      });
+
       return plainToInstance(BadgeListDto, badges, {
         excludeExtraneousValues: true, // removes all non-@Expose fields
       });
@@ -117,6 +130,16 @@ export class BadgeService {
 
     if (!badge) {
       throw new NotFoundException('Badge not found');
+    }
+
+    // Sort levels by level column (nulls last)
+    if (badge.levels) {
+      badge.levels.sort((a, b) => {
+        if (a.level == null && b.level == null) return 0;
+        if (a.level == null) return 1;
+        if (b.level == null) return -1;
+        return a.level - b.level;
+      });
     }
 
     return plainToInstance(BadgeListDto, badge, {
@@ -173,12 +196,13 @@ export class BadgeService {
 
       if (updateBadgeDto.levels) {
         await this.badgeLevelRepository.delete({ badgeId: id });
-        badge.levels = updateBadgeDto.levels.map((level) =>
+        badge.levels = updateBadgeDto.levels.map((lvl) =>
           this.badgeLevelRepository.create({
-            name: level.name,
-            description: level.description,
-            count: level.count,
-            imageUrl: level.imageUrl,
+            level: lvl.level,
+            name: lvl.name,
+            description: lvl.description,
+            count: lvl.count,
+            imageUrl: lvl.imageUrl,
             badgeId: id,
           }),
         );
@@ -241,17 +265,25 @@ export class BadgeService {
           isRepeatable: badge.isRepeatable,
           locked,
           userCount,
-          levels: (badge.levels || []).map((level) => {
-            const levelLocked = userCount < level.count;
-            return {
-              id: level.id,
-              name: level.name,
-              description: level.description,
-              count: level.count,
-              imageUrl: levelLocked ? '' : level.imageUrl,
-              locked: levelLocked,
-            };
-          }),
+          levels: (badge.levels || [])
+            .sort((a, b) => {
+              if (a.level == null && b.level == null) return 0;
+              if (a.level == null) return 1;
+              if (b.level == null) return -1;
+              return a.level - b.level;
+            })
+            .map((lvl) => {
+              const levelLocked = userCount < lvl.count;
+              return {
+                id: lvl.id,
+                level: lvl.level,
+                name: lvl.name,
+                description: lvl.description,
+                count: lvl.count,
+                imageUrl: levelLocked ? '' : lvl.imageUrl,
+                locked: levelLocked,
+              };
+            }),
         };
       });
     } catch (error) {

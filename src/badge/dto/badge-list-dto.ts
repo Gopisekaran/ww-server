@@ -71,6 +71,9 @@ export class BadgeLevelDto {
   id: string;
 
   @Expose()
+  level?: number;
+
+  @Expose()
   name: string;
 
   @Expose()

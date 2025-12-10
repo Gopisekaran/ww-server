@@ -15,6 +15,11 @@ import { Type } from 'class-transformer';
 import { BadgeCategory } from '../entities/badge.entity';
 
 export class CreateBadgeLevelDto {
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  level?: number;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)

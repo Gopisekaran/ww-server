@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RideEvent } from './entities/event.entity';
 import { RideEventItinerary } from './entities/event-itenery.entity';
@@ -80,11 +80,16 @@ export class EventManagementService {
       isAborted: false,
     };
 
+    // Filter rides that overlap with the given date range
+    // A ride overlaps if: ride.startDate <= filter.endDate AND ride.endDate >= filter.startDate
     if (startDate && endDate) {
-      where.startDate = Between(new Date(startDate), new Date(endDate));
+      where.startDate = LessThanOrEqual(new Date(endDate));
+      where.endDate = MoreThanOrEqual(new Date(startDate));
     } else if (startDate) {
-      where.startDate = MoreThanOrEqual(new Date(startDate));
+      // Ride ends on or after the filter start date
+      where.endDate = MoreThanOrEqual(new Date(startDate));
     } else if (endDate) {
+      // Ride starts on or before the filter end date
       where.startDate = LessThanOrEqual(new Date(endDate));
     }
 
@@ -106,6 +111,34 @@ export class EventManagementService {
     );
 
     return plainToInstance(PublicRideListResponseDto, filtered, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async findOngoingRides() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const events = await this.eventRepository.find({
+      where: {
+        isCancelled: false,
+        isAborted: false,
+        isCompleted: false,
+        startDate: LessThanOrEqual(today),
+        endDate: MoreThanOrEqual(today),
+      },
+      relations: [
+        'participants',
+        'participants.biker',
+        'badge',
+        'eventType',
+        'eventType.badge',
+        'createdUser',
+      ],
+      order: { startDate: 'ASC', time: 'ASC' },
+    });
+
+    return plainToInstance(PublicRideListResponseDto, events, {
       excludeExtraneousValues: true,
     });
   }

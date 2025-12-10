@@ -97,6 +97,23 @@ export class EventManagementController {
     return this.eventManagementService.findPublicRides(filter);
   }
 
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
+  @Get('ongoing-rides')
+  @ApiOperation({
+    summary: 'List ongoing rides (no auth)',
+    description:
+      'Returns rides that are currently ongoing based on the current date (startDate <= today <= endDate), excluding cancelled, aborted, or completed events.',
+  })
+  @ApiOkResponse({
+    type: PublicRideListResponseDto,
+    isArray: true,
+    description: 'List of ongoing rides',
+  })
+  findOngoingRides() {
+    return this.eventManagementService.findOngoingRides();
+  }
+
   // New: Rider joins event via POST
   @UseGuards(SupabaseAuthGuard)
   @ApiBearerAuth()
